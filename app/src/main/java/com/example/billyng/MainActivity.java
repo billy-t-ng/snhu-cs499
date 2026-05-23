@@ -32,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView rvWeightEntries;
 
-    private FloatingActionButton fabAdd;
     private TextView navHome, navHistory, navSettings;
 
     private String username = "";
@@ -60,6 +59,14 @@ public class MainActivity extends AppCompatActivity {
         // Initial load
         loadRecentEntries();
         updateSummary();
+        // Goal weight tap to edit
+        tvRightToGoal.setOnClickListener(v -> showGoalDialog());
+
+        tvLeftWeight.setOnClickListener(v -> {
+            Intent intent = new Intent(this, AddEntryActivity.class);
+            intent.putExtra("username", username);
+            startActivity(intent);
+        });
     }
 
     @Override
@@ -84,19 +91,12 @@ public class MainActivity extends AppCompatActivity {
 
         rvWeightEntries = findViewById(R.id.rvWeightEntries);
 
-        fabAdd = findViewById(R.id.fabAdd);
         navHome = findViewById(R.id.navHome);
         navHistory = findViewById(R.id.navHistory);
         navSettings = findViewById(R.id.navSettings);
     }
 
     private void setupClicks() {
-
-        fabAdd.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, AddEntryActivity.class);
-            intent.putExtra("username", username);
-            startActivity(intent);
-        });
 
         tvViewAll.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
@@ -166,8 +166,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateSummary() {
         if (username.isEmpty()) {
-            tvLeftWeight.setText("Current: --");
-            tvRightToGoal.setText("To goal: --");
+            tvLeftWeight.setText("Tap to\nset weight");
+            tvRightToGoal.setText("Tap to set goal");
             tvLastEntry.setText("Last entry: --");
             return;
         }
@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
         List<DatabaseHelper.WeightEntry> mostRecent = db.getRecentWeights(username, 1);
         if (mostRecent.isEmpty()) {
             tvLeftWeight.setText("Current: --");
-            tvRightToGoal.setText("To goal: --");
+            tvRightToGoal.setText("Tap to set goal");
             tvLastEntry.setText("Last entry: --");
             return;
         }
@@ -185,65 +185,59 @@ public class MainActivity extends AppCompatActivity {
         tvLeftWeight.setText(String.format(Locale.US, "Current: %.1f", entry.weight));
         tvLastEntry.setText("Last entry: " + entry.date);
 
-        // Not implemented yet, placeholder
-        tvRightToGoal.setText("To goal: --");
-    }
+        // Check for saved goal weight
+        android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
+        float goal = prefs.getFloat("goal_weight", -1);
 
-    private static class WeightAdapter extends RecyclerView.Adapter<WeightViewHolder> {
-
-        interface OnDeleteClick {
-            void onDelete(DatabaseHelper.WeightEntry entry);
-        }
-
-        private final List<DatabaseHelper.WeightEntry> items;
-        private final OnDeleteClick onDeleteClick;
-
-        WeightAdapter(List<DatabaseHelper.WeightEntry> items, OnDeleteClick onDeleteClick) {
-            this.items = items;
-            this.onDeleteClick = onDeleteClick;
-        }
-
-        @NonNull
-        @Override
-        public WeightViewHolder onCreateViewHolder(@NonNull android.view.ViewGroup parent, int viewType) {
-            android.view.View view = android.view.LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_weight_entry, parent, false);
-            return new WeightViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull WeightViewHolder holder, int position) {
-            DatabaseHelper.WeightEntry entry = items.get(position);
-
-            holder.tvEntryDate.setText(entry.date);
-
-            String note = (entry.note == null) ? "" : entry.note.trim();
-            if (note.isEmpty()) {
-                holder.tvEntryNote.setText(String.format(Locale.US, "%.1f lbs", entry.weight));
+        if (goal > 0) {
+            double diff = Math.abs(entry.weight - goal);
+            if (diff == 0) {
+                tvRightToGoal.setText("Goal reached!");
             } else {
-                holder.tvEntryNote.setText(String.format(Locale.US, "%.1f lbs  •  %s", entry.weight, note));
+                tvRightToGoal.setText(String.format(Locale.US, "To goal: %.1f lbs", diff));
             }
-
-            holder.btnDelete.setOnClickListener(v -> onDeleteClick.onDelete(entry));
-        }
-
-        @Override
-        public int getItemCount() {
-            return items.size();
+        } else {
+            tvRightToGoal.setText("Tap to set goal");
         }
     }
 
-    private static class WeightViewHolder extends RecyclerView.ViewHolder {
+    private void showGoalDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Set Goal Weight");
 
-        final TextView tvEntryDate;
-        final TextView tvEntryNote;
-        final android.widget.ImageButton btnDelete;
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setHint("Enter goal weight (lbs)");
 
-        WeightViewHolder(@NonNull android.view.View itemView) {
-            super(itemView);
-            tvEntryDate = itemView.findViewById(R.id.tvEntryDate);
-            tvEntryNote = itemView.findViewById(R.id.tvEntryNote);
-            btnDelete = itemView.findViewById(R.id.btnDelete);
+        // Pre-fill with current goal if one exists
+        android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
+        float currentGoal = prefs.getFloat("goal_weight", -1);
+        if (currentGoal > 0) {
+            input.setText(String.valueOf(currentGoal));
         }
+
+        builder.setView(input);
+
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String value = input.getText().toString().trim();
+            if (!value.isEmpty()) {
+                try {
+                    float goal = Float.parseFloat(value);
+                    if (goal > 0) {
+                        prefs.edit().putFloat("goal_weight", goal).apply();
+                        updateSummary();
+                    }
+                } catch (NumberFormatException e) {
+                    android.widget.Toast.makeText(this, "Enter a valid number", android.widget.Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.show();
     }
+
+
+
+
 }

@@ -39,7 +39,6 @@ public class AddEntryActivity extends AppCompatActivity {
         etNote = findViewById(R.id.etNote);
         btnSaveEntry = findViewById(R.id.btnSaveEntry);
         btnCancelEntry = findViewById(R.id.btnCancelEntry);
-
         btnSaveEntry.setOnClickListener(v -> saveEntry());
         btnCancelEntry.setOnClickListener(v -> finish());
     }
@@ -83,12 +82,16 @@ public class AddEntryActivity extends AppCompatActivity {
             Toast.makeText(this, "Entry saved.", Toast.LENGTH_SHORT).show();
 
             // 3. SMS Notification Trigger
-            // Checks for goal weight. If user denied permission, sendGoalReachedSMS
-            // will handle it gracefully without crashing.
-            double goalWeight = 150.0; // Placeholder
-            if (weightValue <= goalWeight) {
+            // Pulls goal weight from SharedPreferences instead of hardcoded value.
+            // If no goal is set, the SMS trigger is skipped.
+            android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
+            float goalWeight = prefs.getFloat("goal_weight", -1);
+            boolean alertsEnabled = prefs.getBoolean("sms_alerts_enabled", false);
+            String phoneNumber = prefs.getString("phone_number", "");
+
+            if (goalWeight > 0 && alertsEnabled && !phoneNumber.isEmpty() && weightValue <= goalWeight) {
                 String msg = "Congratulations! You've reached your weight goal of " + goalWeight + " lbs!";
-                db.sendGoalReachedSMS(this, "5551234", msg);
+                db.sendGoalReachedSMS(this, phoneNumber, msg);
             }
 
             // Return to dashboard

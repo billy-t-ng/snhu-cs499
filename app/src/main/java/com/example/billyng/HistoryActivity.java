@@ -25,7 +25,6 @@ public class HistoryActivity extends AppCompatActivity {
     private CalendarView calendarHistory;
     private TextView tvSelectedDate;
     private RecyclerView rvEntriesForDay;
-    private FloatingActionButton fabAdd;
     private TextView navHome, navHistory, navSettings;
 
     private String username = "";
@@ -67,7 +66,6 @@ public class HistoryActivity extends AppCompatActivity {
         calendarHistory = findViewById(R.id.calendarHistory);
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
         rvEntriesForDay = findViewById(R.id.rvEntriesForDay);
-        fabAdd = findViewById(R.id.fabAdd);
         navHome = findViewById(R.id.navHome);
         navHistory = findViewById(R.id.navHistory);
         navSettings = findViewById(R.id.navSettings);
@@ -98,12 +96,6 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void setupClicks() {
-        fabAdd.setOnClickListener(v -> {
-            Intent intent = new Intent(HistoryActivity.this, AddEntryActivity.class);
-            intent.putExtra("username", username);
-            startActivity(intent);
-        });
-
         navHome.setOnClickListener(v -> {
             Intent intent = new Intent(HistoryActivity.this, MainActivity.class);
             intent.putExtra("username", username);
@@ -134,55 +126,4 @@ public class HistoryActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
     }
 
-    // Adapter Class
-    private static class DayAdapter extends RecyclerView.Adapter<DayViewHolder> {
-        interface OnEntryListener {
-            void onDelete(DatabaseHelper.WeightEntry entry);
-            void onItemClick(DatabaseHelper.WeightEntry entry);
-        }
-
-        private final List<DatabaseHelper.WeightEntry> items;
-        private final OnEntryListener listener;
-
-        DayAdapter(List<DatabaseHelper.WeightEntry> items, OnEntryListener listener) {
-            this.items = items;
-            this.listener = listener;
-        }
-
-        @NonNull
-        @Override
-        public DayViewHolder onCreateViewHolder(@NonNull android.view.ViewGroup parent, int viewType) {
-            android.view.View view = android.view.LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_weight_entry, parent, false);
-            return new DayViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull DayViewHolder holder, int position) {
-            DatabaseHelper.WeightEntry entry = items.get(position);
-            holder.tvEntryDate.setText(entry.date);
-            String note = (entry.note == null) ? "" : entry.note.trim();
-            holder.tvEntryNote.setText(String.format(Locale.US, "%.1f lbs %s", entry.weight,
-                    note.isEmpty() ? "" : " • " + note));
-
-            // Set listeners
-            holder.itemView.setOnClickListener(v -> listener.onItemClick(entry));
-            holder.btnDelete.setOnClickListener(v -> listener.onDelete(entry));
-        }
-
-        @Override
-        public int getItemCount() { return items.size(); }
-    }
-
-    private static class DayViewHolder extends RecyclerView.ViewHolder {
-        final TextView tvEntryDate, tvEntryNote;
-        final android.widget.ImageButton btnDelete;
-
-        DayViewHolder(@NonNull android.view.View itemView) {
-            super(itemView);
-            tvEntryDate = itemView.findViewById(R.id.tvEntryDate);
-            tvEntryNote = itemView.findViewById(R.id.tvEntryNote);
-            btnDelete = itemView.findViewById(R.id.btnDelete);
-        }
-    }
 }

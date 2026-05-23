@@ -40,7 +40,7 @@
                 android:id="@+id/tvRightToGoal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="end"
+                android:gravity="center"
                 android:text="13 lb\nto goal"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -271,22 +271,11 @@
             android:text="History"
             android:clickable="true"
             android:focusable="true"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBaseline_toBaselineOf="@id/navHome"
             app:layout_constraintStart_toEndOf="@id/navHome"
-            app:layout_constraintEnd_toStartOf="@id/fabAdd"
+            app:layout_constraintEnd_toStartOf="@id/navSettings"
             app:layout_constraintHorizontal_bias="0.5" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabAdd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="Add weight entry"
-            app:srcCompat="@android:drawable/ic_input_add"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
 
         <TextView
             android:id="@+id/navSettings"
@@ -298,8 +287,7 @@
             android:clickable="true"
             android:focusable="true"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBaseline_toBaselineOf="@id/navHome" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

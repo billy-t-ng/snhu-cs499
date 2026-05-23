@@ -2,10 +2,12 @@ package com.example.billyng;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,6 +28,7 @@ public class SmsPermissionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         setContentView(R.layout.activity_sms_permission);
 
         // Initialize UI components using IDs from activity_sms_permission.xml
@@ -35,9 +38,31 @@ public class SmsPermissionActivity extends AppCompatActivity {
 
         // Check current permission state on load
         updateStatusUI();
+        // Bottom navigation
+        findViewById(R.id.navHome).setOnClickListener(v -> {
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+        });
 
-        // Prompt for permission when button is clicked
-        btnEnableSms.setOnClickListener(v -> requestSmsPermission());
+        findViewById(R.id.navHistory).setOnClickListener(v -> {
+            startActivity(new Intent(this, HistoryActivity.class));
+            finish();
+        });
+
+        // Phone number input
+        android.widget.EditText etPhoneNumber = findViewById(R.id.etPhoneNumber);
+        android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
+
+        // Load saved number
+        String savedNumber = prefs.getString("phone_number", "");
+        etPhoneNumber.setText(savedNumber);
+
+        // Save when focus leaves the field
+        etPhoneNumber.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                prefs.edit().putString("phone_number", etPhoneNumber.getText().toString().trim()).apply();
+            }
+        });
     }
 
     /**
@@ -45,15 +70,32 @@ public class SmsPermissionActivity extends AppCompatActivity {
      * Ensures the app continues to function even if permission is denied.
      */
     private void updateStatusUI() {
+        android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
+        boolean alertsEnabled = prefs.getBoolean("sms_alerts_enabled", false);
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
                 == PackageManager.PERMISSION_GRANTED) {
             tvPermissionState.setText("Permission status: Granted");
-            tvSmsResult.setText("Text alerts are currently ON.");
-            btnEnableSms.setEnabled(false); // Disable button if already enabled
+
+            if (alertsEnabled) {
+                tvSmsResult.setText("Text alerts are currently ON.");
+                btnEnableSms.setText("Disable SMS Alerts");
+            } else {
+                tvSmsResult.setText("Text alerts are currently OFF.");
+                btnEnableSms.setText("Enable SMS Alerts");
+            }
+
+            btnEnableSms.setEnabled(true);
+            btnEnableSms.setOnClickListener(v -> {
+                prefs.edit().putBoolean("sms_alerts_enabled", !alertsEnabled).apply();
+                updateStatusUI();
+            });
         } else {
             tvPermissionState.setText("Permission status: Not granted");
             tvSmsResult.setText("Text alerts are currently OFF.");
+            btnEnableSms.setText("Enable SMS Alerts");
             btnEnableSms.setEnabled(true);
+            btnEnableSms.setOnClickListener(v -> requestSmsPermission());
         }
     }
 
@@ -78,6 +120,8 @@ public class SmsPermissionActivity extends AppCompatActivity {
         if (requestCode == SMS_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "SMS Permission Granted", Toast.LENGTH_SHORT).show();
+                getSharedPreferences("weight_tracker", MODE_PRIVATE)
+                        .edit().putBoolean("sms_alerts_enabled", true).apply();
             } else {
                 Toast.makeText(this, "SMS Permission Denied", Toast.LENGTH_SHORT).show();
             }
@@ -85,4 +129,13 @@ public class SmsPermissionActivity extends AppCompatActivity {
             updateStatusUI();
         }
     }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 }
