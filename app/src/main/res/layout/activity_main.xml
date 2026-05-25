@@ -240,7 +240,7 @@
 
     </androidx.cardview.widget.CardView>
 
-    <!-- Bottom nav bar + centered FAB -->
+    <!-- Bottom nav bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
