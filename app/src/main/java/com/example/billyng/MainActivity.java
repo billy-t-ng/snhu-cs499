@@ -116,9 +116,15 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        chip7d.setOnClickListener(v -> loadFilteredEntries(7));
-        chip30d.setOnClickListener(v -> loadFilteredEntries(30));
-        chip90d.setOnClickListener(v -> loadFilteredEntries(90));
+        chipGroupRange.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.chip7d) {
+                loadFilteredEntries(7);
+            } else if (checkedId == R.id.chip30d) {
+                loadFilteredEntries(30);
+            } else if (checkedId == R.id.chip90d) {
+                loadFilteredEntries(90);
+            }
+        });
     }
 
     private void setupRecycler() {
