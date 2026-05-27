@@ -23,7 +23,6 @@
             android:layout_height="wrap_content"
             android:padding="16dp">
 
-            <!-- Weight card: Left - Current Weight -->
             <TextView
                 android:id="@+id/tvLeftWeight"
                 android:layout_width="0dp"
@@ -35,7 +34,6 @@
                 app:layout_constraintEnd_toStartOf="@id/vDivider"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <!-- Weight card: Right - Weight til goal -->
             <TextView
                 android:id="@+id/tvRightToGoal"
                 android:layout_width="0dp"
@@ -48,7 +46,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <!-- Weight card - Vertical divider -->
             <View
                 android:id="@+id/vDivider"
                 android:layout_width="1dp"
@@ -61,7 +58,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
-            <!-- Weight Card - Horizontal divider -->
             <View
                 android:id="@+id/hDivider"
                 android:layout_width="0dp"
@@ -72,7 +68,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
-            <!-- Last entry date (centered) -->
             <TextView
                 android:id="@+id/tvLastEntry"
                 android:layout_width="0dp"
@@ -89,7 +84,6 @@
 
     </androidx.cardview.widget.CardView>
 
-    <!-- Recent Entries header  -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/recentHeaderRow"
         android:layout_width="0dp"
@@ -126,7 +120,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Entry headers -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/rowEntryHeaders"
         android:layout_width="0dp"
@@ -169,7 +162,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Recent entries list -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvWeightEntries"
         android:layout_width="0dp"
@@ -184,7 +176,6 @@
         app:layout_constraintBottom_toTopOf="@id/chipGroupRange"
         tools:listitem="@layout/item_weight_entry" />
 
-    <!-- Time range selectors (7D, 30D, 90D) -->
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chipGroupRange"
         android:layout_width="0dp"
@@ -200,25 +191,27 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip7d"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="7D" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip30d"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="30D" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip90d"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="90D" />
 
     </com.google.android.material.chip.ChipGroup>
 
-    <!-- Graph (Placeholder) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardGraph"
         android:layout_width="0dp"
@@ -275,7 +268,6 @@
             app:layout_constraintStart_toEndOf="@id/navHome"
             app:layout_constraintEnd_toStartOf="@id/navSettings"
             app:layout_constraintHorizontal_bias="0.5" />
-
 
         <TextView
             android:id="@+id/navSettings"

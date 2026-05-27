@@ -38,22 +38,17 @@ public class HistoryActivity extends AppCompatActivity {
     private EditText etSearch;
     private TextView tvSortToggle;
 
-    // Calendar view elements
     private ConstraintLayout selectedDateRow;
     private CardView cardSelectedDay;
-
-    // List view elements
     private LinearLayout listViewGroup;
 
     private String username = "";
     private String selectedDateIso = "";
     private DatabaseHelper db;
 
-    // Calendar view adapter
     private DayAdapter dayAdapter;
     private final List<DatabaseHelper.WeightEntry> dayItems = new ArrayList<>();
 
-    // List view adapter and data
     private DayAdapter listAdapter;
     private final List<DatabaseHelper.WeightEntry> allItems = new ArrayList<>();
     private final List<DatabaseHelper.WeightEntry> filteredItems = new ArrayList<>();
@@ -110,7 +105,6 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void setupRecyclers() {
-        // Calendar day entries
         rvEntriesForDay.setLayoutManager(new LinearLayoutManager(this));
         dayAdapter = new DayAdapter(dayItems, new DayAdapter.OnEntryListener() {
             @Override
@@ -131,7 +125,6 @@ public class HistoryActivity extends AppCompatActivity {
         });
         rvEntriesForDay.setAdapter(dayAdapter);
 
-        // All entries list
         rvAllEntries.setLayoutManager(new LinearLayoutManager(this));
         listAdapter = new DayAdapter(filteredItems, new DayAdapter.OnEntryListener() {
             @Override
@@ -167,14 +160,8 @@ public class HistoryActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        chipCalendar.setOnClickListener(v -> {
-            Toast.makeText(this, "Calendar tapped", Toast.LENGTH_SHORT).show();
-            showCalendarView();
-        });
-        chipList.setOnClickListener(v -> {
-            Toast.makeText(this, "List tapped", Toast.LENGTH_SHORT).show();
-            showListView();
-        });
+        chipCalendar.setOnClickListener(v -> showCalendarView());
+        chipList.setOnClickListener(v -> showListView());
 
         tvSortToggle.setOnClickListener(v -> {
             sortNewestFirst = !sortNewestFirst;
@@ -182,8 +169,6 @@ public class HistoryActivity extends AppCompatActivity {
             applyFilterAndSort();
         });
     }
-
-
 
     private void setupSearch() {
         etSearch.addTextChangedListener(new TextWatcher() {
@@ -265,9 +250,17 @@ public class HistoryActivity extends AppCompatActivity {
         }
 
         if (sortNewestFirst) {
-            Collections.sort(filteredItems, (a, b) -> b.date.compareTo(a.date));
+            Collections.sort(filteredItems, (a, b) -> {
+                int dateCompare = b.date.compareTo(a.date);
+                if (dateCompare != 0) return dateCompare;
+                return Long.compare(b.id, a.id);
+            });
         } else {
-            Collections.sort(filteredItems, (a, b) -> a.date.compareTo(b.date));
+            Collections.sort(filteredItems, (a, b) -> {
+                int dateCompare = a.date.compareTo(b.date);
+                if (dateCompare != 0) return dateCompare;
+                return Long.compare(a.id, b.id);
+            });
         }
 
         listAdapter.notifyDataSetChanged();

@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".HistoryActivity">
 
-    <!-- Title -->
     <TextView
         android:id="@+id/tvHistoryTitle"
         android:layout_width="0dp"
@@ -21,7 +20,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- View toggle -->
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chipGroupView"
         android:layout_width="0dp"
@@ -37,19 +35,20 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipCalendar"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Calendar" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipList"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="List" />
 
     </com.google.android.material.chip.ChipGroup>
 
-    <!-- Calendar view group -->
     <CalendarView
         android:id="@+id/calendarHistory"
         android:layout_width="0dp"
@@ -140,7 +139,6 @@
 
     </androidx.cardview.widget.CardView>
 
-    <!-- List view group -->
     <LinearLayout
         android:id="@+id/listViewGroup"
         android:layout_width="0dp"
@@ -155,7 +153,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav">
 
-        <!-- Search bar -->
         <EditText
             android:id="@+id/etSearch"
             android:layout_width="match_parent"
@@ -164,7 +161,6 @@
             android:inputType="text"
             android:layout_marginBottom="8dp" />
 
-        <!-- Sort toggle -->
         <TextView
             android:id="@+id/tvSortToggle"
             android:layout_width="wrap_content"
@@ -176,7 +172,6 @@
             android:padding="4dp"
             android:layout_marginBottom="8dp" />
 
-        <!-- All entries list -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvAllEntries"
             android:layout_width="match_parent"
@@ -186,7 +181,6 @@
 
     </LinearLayout>
 
-    <!-- Bottom nav bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
