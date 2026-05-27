@@ -54,10 +54,9 @@ public class MainActivity extends AppCompatActivity {
 
         chip7d.setChecked(true);
 
-        // Initial load
-        loadRecentEntries();
+        refreshForSelectedChip();
         updateSummary();
-        // Goal weight tap to edit
+
         tvRightToGoal.setOnClickListener(v -> showGoalDialog());
 
         tvLeftWeight.setOnClickListener(v -> {
@@ -70,8 +69,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // When returning from AddEntry/History, refresh list + summary
-        loadRecentEntries();
+        refreshForSelectedChip();
         updateSummary();
     }
 
@@ -118,19 +116,9 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        chipGroupRange.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.chip7d) {
-                Toast.makeText(this, "Range: 7 days", Toast.LENGTH_SHORT).show();
-                //Data filtering not implemented yet
-                loadRecentEntries();
-            } else if (checkedId == R.id.chip30d) {
-                Toast.makeText(this, "Range: 30 days", Toast.LENGTH_SHORT).show();
-                loadRecentEntries();
-            } else if (checkedId == R.id.chip90d) {
-                Toast.makeText(this, "Range: 90 days", Toast.LENGTH_SHORT).show();
-                loadRecentEntries();
-            }
-        });
+        chip7d.setOnClickListener(v -> loadFilteredEntries(7));
+        chip30d.setOnClickListener(v -> loadFilteredEntries(30));
+        chip90d.setOnClickListener(v -> loadFilteredEntries(90));
     }
 
     private void setupRecycler() {
@@ -141,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
                 boolean deleted = db.deleteWeightById(entry.id);
                 if (deleted) {
                     Toast.makeText(MainActivity.this, "Entry deleted", Toast.LENGTH_SHORT).show();
-                    loadRecentEntries();
+                    refreshForSelectedChip();
                     updateSummary();
                 } else {
                     Toast.makeText(MainActivity.this, "Delete failed", Toast.LENGTH_SHORT).show();
@@ -151,10 +139,63 @@ public class MainActivity extends AppCompatActivity {
         rvWeightEntries.setAdapter(adapter);
     }
 
+    private void refreshForSelectedChip() {
+        int checkedId = chipGroupRange.getCheckedChipId();
+        if (checkedId == R.id.chip7d) {
+            loadFilteredEntries(7);
+        } else if (checkedId == R.id.chip30d) {
+            loadFilteredEntries(30);
+        } else if (checkedId == R.id.chip90d) {
+            loadFilteredEntries(90);
+        } else {
+            loadRecentEntries();
+        }
+    }
+
+    private void loadFilteredEntries(int days) {
+        if (username.isEmpty()) return;
+
+        java.time.LocalDate cutoff = java.time.LocalDate.now().minusDays(days - 1);
+        String startDate = cutoff.toString();
+
+        List<DatabaseHelper.WeightEntry> filtered = db.getWeightsSince(username, startDate);
+
+        items.clear();
+        items.addAll(filtered);
+        adapter.notifyDataSetChanged();
+
+        updateWeightChangeSummary(filtered, days);
+    }
+
+    private void updateWeightChangeSummary(List<DatabaseHelper.WeightEntry> entries, int days) {
+        if (entries.size() < 2) {
+            tvLastEntry.setText("Not enough data for " + days + " day trend");
+            return;
+        }
+
+        double newest = entries.get(0).weight;
+        double oldest = entries.get(entries.size() - 1).weight;
+        double change = newest - oldest;
+
+        String direction;
+        if (change > 0) {
+            direction = "up";
+        } else if (change < 0) {
+            direction = "down";
+        } else {
+            direction = "no change";
+        }
+
+        if (change != 0) {
+            tvLastEntry.setText(String.format(Locale.US, "%d day trend: %.1f lbs %s", days, Math.abs(change), direction));
+        } else {
+            tvLastEntry.setText(String.format(Locale.US, "%d day trend: no change", days));
+        }
+    }
+
     private void loadRecentEntries() {
         if (username.isEmpty()) return;
 
-        // Recent 10 entries on main screen
         List<DatabaseHelper.WeightEntry> fresh = db.getRecentWeights(username, 10);
 
         items.clear();
@@ -170,7 +211,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // Get most recent entry (limit 1)
         List<DatabaseHelper.WeightEntry> mostRecent = db.getRecentWeights(username, 1);
         if (mostRecent.isEmpty()) {
             tvLeftWeight.setText("Current: --");
@@ -181,9 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
         DatabaseHelper.WeightEntry entry = mostRecent.get(0);
         tvLeftWeight.setText(String.format(Locale.US, "Current: %.1f", entry.weight));
-        tvLastEntry.setText("Last entry: " + entry.date);
 
-        // Check for saved goal weight
         android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
         float goal = prefs.getFloat("goal_weight", -1);
 
@@ -207,7 +245,6 @@ public class MainActivity extends AppCompatActivity {
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         input.setHint("Enter goal weight (lbs)");
 
-        // Pre-fill with current goal if one exists
         android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
         float currentGoal = prefs.getFloat("goal_weight", -1);
         if (currentGoal > 0) {
@@ -234,8 +271,4 @@ public class MainActivity extends AppCompatActivity {
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
         builder.show();
     }
-
-
-
-
 }

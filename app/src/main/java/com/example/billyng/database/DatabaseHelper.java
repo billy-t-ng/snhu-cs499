@@ -200,4 +200,63 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             this.note = note;
         }
     }
+
+    public List<WeightEntry> getWeightsSince(String username, String startDate) {
+        List<WeightEntry> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(
+                TABLE_WEIGHTS,
+                null,
+                COL_W_USERNAME + "=? AND " + COL_W_DATE + ">=?",
+                new String[]{username, startDate},
+                null,
+                null,
+                COL_W_DATE + " DESC, " + COL_W_ID + " DESC"
+        );
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    list.add(new WeightEntry(
+                            cursor.getLong(0),
+                            cursor.getString(2),
+                            cursor.getDouble(3),
+                            cursor.getString(4)));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+
+        return list;
+    }
+    public List<WeightEntry> getAllWeights(String username) {
+        List<WeightEntry> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(
+                TABLE_WEIGHTS,
+                null,
+                COL_W_USERNAME + "=?",
+                new String[]{username},
+                null,
+                null,
+                COL_W_DATE + " DESC, " + COL_W_ID + " DESC"
+        );
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    list.add(new WeightEntry(
+                            cursor.getLong(0),
+                            cursor.getString(2),
+                            cursor.getDouble(3),
+                            cursor.getString(4)));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+
+        return list;
+    }
 }
