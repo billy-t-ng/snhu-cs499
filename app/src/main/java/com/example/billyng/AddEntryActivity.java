@@ -1,6 +1,7 @@
 package com.example.billyng;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
@@ -43,14 +44,10 @@ public class AddEntryActivity extends AppCompatActivity {
         btnCancelEntry.setOnClickListener(v -> finish());
     }
 
-
-    //Validates input, saves entry to database, and triggers SMS if goal is met.
-
     private void saveEntry() {
         String weightStr = etWeight.getText().toString().trim();
         String noteStr = etNote.getText().toString().trim();
 
-        // 1. Validation
         if (TextUtils.isEmpty(username)) {
             Toast.makeText(this, "No logged-in user found.", Toast.LENGTH_SHORT).show();
             return;
@@ -74,18 +71,15 @@ public class AddEntryActivity extends AppCompatActivity {
             return;
         }
 
-        // 2. Persistent Storage (Create)
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
         boolean inserted = db.insertWeightEntry(username, today, weightValue, noteStr);
 
         if (inserted) {
             Toast.makeText(this, "Entry saved.", Toast.LENGTH_SHORT).show();
 
-            // 3. SMS Notification Trigger
-            // Pulls goal weight from SharedPreferences instead of hardcoded value.
-            // If no goal is set, the SMS trigger is skipped.
-            android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
-            float goalWeight = prefs.getFloat("goal_weight", -1);
+            // SMS trigger using goal from database instead of SharedPreferences
+            double goalWeight = db.getGoal(username);
+            SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
             boolean alertsEnabled = prefs.getBoolean("sms_alerts_enabled", false);
             String phoneNumber = prefs.getString("phone_number", "");
 
@@ -94,7 +88,6 @@ public class AddEntryActivity extends AppCompatActivity {
                 db.sendGoalReachedSMS(this, phoneNumber, msg);
             }
 
-            // Return to dashboard
             Intent intent = new Intent(AddEntryActivity.this, MainActivity.class);
             intent.putExtra("username", username);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);

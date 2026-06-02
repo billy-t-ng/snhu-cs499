@@ -13,7 +13,9 @@ import com.example.billyng.database.DatabaseHelper;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -228,8 +230,7 @@ public class MainActivity extends AppCompatActivity {
         DatabaseHelper.WeightEntry entry = mostRecent.get(0);
         tvLeftWeight.setText(String.format(Locale.US, "Current: %.1f", entry.weight));
 
-        android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
-        float goal = prefs.getFloat("goal_weight", -1);
+        double goal = db.getGoal(username);
 
         if (goal > 0) {
             double diff = Math.abs(entry.weight - goal);
@@ -251,8 +252,7 @@ public class MainActivity extends AppCompatActivity {
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         input.setHint("Enter goal weight (lbs)");
 
-        android.content.SharedPreferences prefs = getSharedPreferences("weight_tracker", MODE_PRIVATE);
-        float currentGoal = prefs.getFloat("goal_weight", -1);
+        double currentGoal = db.getGoal(username);
         if (currentGoal > 0) {
             input.setText(String.valueOf(currentGoal));
         }
@@ -263,13 +263,14 @@ public class MainActivity extends AppCompatActivity {
             String value = input.getText().toString().trim();
             if (!value.isEmpty()) {
                 try {
-                    float goal = Float.parseFloat(value);
+                    double goal = Double.parseDouble(value);
                     if (goal > 0) {
-                        prefs.edit().putFloat("goal_weight", goal).apply();
+                        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
+                        db.setGoal(username, goal, today);
                         updateSummary();
                     }
                 } catch (NumberFormatException e) {
-                    android.widget.Toast.makeText(this, "Enter a valid number", android.widget.Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Enter a valid number", Toast.LENGTH_SHORT).show();
                 }
             }
         });

@@ -10,19 +10,23 @@ import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "weight_tracker.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
+    // Table: Users
     private static final String TABLE_USERS = "users";
     private static final String COL_USER_ID = "id";
     private static final String COL_USERNAME = "username";
     private static final String COL_PASSWORD = "password";
 
+    // Table: Weight Entries
     private static final String TABLE_WEIGHTS = "weights";
     private static final String COL_W_ID = "id";
     private static final String COL_W_USERNAME = "username";
@@ -30,18 +34,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COL_W_VALUE = "weight_value";
     private static final String COL_W_NOTE = "note";
 
+    // Table: Goals
+    private static final String TABLE_GOALS = "goals";
+    private static final String COL_G_ID = "id";
+    private static final String COL_G_USERNAME = "username";
+    private static final String COL_G_WEIGHT = "goal_weight";
+    private static final String COL_G_DATE = "date_set";
+
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        // Users table
         String createUsers = "CREATE TABLE " + TABLE_USERS + " (" +
                 COL_USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COL_USERNAME + " TEXT UNIQUE, " +
-                COL_PASSWORD + " TEXT)";
+                COL_PASSWORD + " TEXT NOT NULL)";
         db.execSQL(createUsers);
 
+        // Weights table
         String createWeights = "CREATE TABLE " + TABLE_WEIGHTS + " (" +
                 COL_W_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COL_W_USERNAME + " TEXT, " +
@@ -49,20 +62,61 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COL_W_VALUE + " REAL, " +
                 COL_W_NOTE + " TEXT)";
         db.execSQL(createWeights);
+
+        // Goals table
+        String createGoals = "CREATE TABLE " + TABLE_GOALS + " (" +
+                COL_G_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COL_G_USERNAME + " TEXT UNIQUE, " +
+                COL_G_WEIGHT + " REAL NOT NULL, " +
+                COL_G_DATE + " TEXT NOT NULL)";
+        db.execSQL(createGoals);
+
+        // Index on weights table for faster date-range queries
+        db.execSQL("CREATE INDEX idx_weights_username_date ON " +
+                TABLE_WEIGHTS + " (" + COL_W_USERNAME + ", " + COL_W_DATE + ")");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_WEIGHTS);
-        onCreate(db);
+        if (oldVersion < 2) {
+            // Add goals table
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_GOALS + " (" +
+                    COL_G_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    COL_G_USERNAME + " TEXT UNIQUE, " +
+                    COL_G_WEIGHT + " REAL NOT NULL, " +
+                    COL_G_DATE + " TEXT NOT NULL)");
+
+            // Add index on weights table
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_weights_username_date ON " +
+                    TABLE_WEIGHTS + " (" + COL_W_USERNAME + ", " + COL_W_DATE + ")");
+
+            // Note: existing passwords remain as-is for existing users.
+            // New accounts created after this upgrade will use hashed passwords.
+        }
     }
 
+    // SHA-256 password hashing
+    private String hashPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(password.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is guaranteed to be available on Android
+            return password;
+        }
+    }
+
+    // User (Login/Account Creation)
     public boolean createUser(String username, String password) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(COL_USERNAME, username);
-        cv.put(COL_PASSWORD, password);
+        cv.put(COL_PASSWORD, hashPassword(password));
         long result = db.insert(TABLE_USERS, null, cv);
         return result != -1;
     }
@@ -70,11 +124,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean checkUser(String username, String password) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " +
-                COL_USERNAME + "=? AND " + COL_PASSWORD + "=?", new String[]{username, password});
+                        COL_USERNAME + "=? AND " + COL_PASSWORD + "=?",
+                new String[]{username, hashPassword(password)});
         boolean exists = cursor.getCount() > 0;
         cursor.close();
         return exists;
     }
+
+    // Goals
+    public boolean setGoal(String username, double goalWeight, String dateSet) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(COL_G_USERNAME, username);
+        cv.put(COL_G_WEIGHT, goalWeight);
+        cv.put(COL_G_DATE, dateSet);
+        long result = db.insertWithOnConflict(TABLE_GOALS, null, cv,
+                SQLiteDatabase.CONFLICT_REPLACE);
+        return result != -1;
+    }
+
+    public double getGoal(String username) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_GOALS, new String[]{COL_G_WEIGHT},
+                COL_G_USERNAME + "=?", new String[]{username},
+                null, null, null);
+        try {
+            if (cursor.moveToFirst()) {
+                return cursor.getDouble(0);
+            }
+            return -1;
+        } finally {
+            cursor.close();
+        }
+    }
+
+    // CRUD
 
     public boolean insertWeightEntry(String username, String date, double weight, String note) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -90,7 +174,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<WeightEntry> getWeightsForDate(String username, String date) {
         List<WeightEntry> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(TABLE_WEIGHTS, null, COL_W_USERNAME + "=? AND " + COL_W_DATE + "=?",
+        Cursor cursor = db.query(TABLE_WEIGHTS, null,
+                COL_W_USERNAME + "=? AND " + COL_W_DATE + "=?",
                 new String[]{username, date}, null, null, null);
 
         try {
@@ -114,7 +199,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<WeightEntry> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_WEIGHTS, null, COL_W_USERNAME + "=?",
-                new String[]{username}, null, null, COL_W_ID + " DESC", String.valueOf(limit));
+                new String[]{username}, null, null,
+                COL_W_DATE + " DESC, " + COL_W_ID + " DESC", String.valueOf(limit));
 
         try {
             if (cursor.moveToFirst()) {
@@ -138,13 +224,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put(COL_W_VALUE, newWeight);
         cv.put(COL_W_NOTE, newNote);
-        int result = db.update(TABLE_WEIGHTS, cv, COL_W_ID + "=?", new String[]{String.valueOf(id)});
+        int result = db.update(TABLE_WEIGHTS, cv, COL_W_ID + "=?",
+                new String[]{String.valueOf(id)});
         return result > 0;
     }
 
     public boolean deleteWeightById(long id) {
         SQLiteDatabase db = this.getWritableDatabase();
-        int result = db.delete(TABLE_WEIGHTS, COL_W_ID + "=?", new String[]{String.valueOf(id)});
+        int result = db.delete(TABLE_WEIGHTS, COL_W_ID + "=?",
+                new String[]{String.valueOf(id)});
         return result > 0;
     }
 
@@ -165,6 +253,55 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } finally {
             cursor.close();
         }
+    }
+
+    public List<WeightEntry> getWeightsSince(String username, String startDate) {
+        List<WeightEntry> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_WEIGHTS, null,
+                COL_W_USERNAME + "=? AND " + COL_W_DATE + ">=?",
+                new String[]{username, startDate}, null, null,
+                COL_W_DATE + " DESC, " + COL_W_ID + " DESC");
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    list.add(new WeightEntry(
+                            cursor.getLong(0),
+                            cursor.getString(2),
+                            cursor.getDouble(3),
+                            cursor.getString(4)));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+
+        return list;
+    }
+
+    public List<WeightEntry> getAllWeights(String username) {
+        List<WeightEntry> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_WEIGHTS, null, COL_W_USERNAME + "=?",
+                new String[]{username}, null, null,
+                COL_W_DATE + " DESC, " + COL_W_ID + " DESC");
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    list.add(new WeightEntry(
+                            cursor.getLong(0),
+                            cursor.getString(2),
+                            cursor.getDouble(3),
+                            cursor.getString(4)));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            cursor.close();
+        }
+
+        return list;
     }
 
     public void sendGoalReachedSMS(Context context, String phoneNumber, String message) {
@@ -191,65 +328,5 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             this.weight = weight;
             this.note = note;
         }
-    }
-
-    public List<WeightEntry> getWeightsSince(String username, String startDate) {
-        List<WeightEntry> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(
-                TABLE_WEIGHTS,
-                null,
-                COL_W_USERNAME + "=? AND " + COL_W_DATE + ">=?",
-                new String[]{username, startDate},
-                null,
-                null,
-                COL_W_DATE + " DESC, " + COL_W_ID + " DESC"
-        );
-
-        try {
-            if (cursor.moveToFirst()) {
-                do {
-                    list.add(new WeightEntry(
-                            cursor.getLong(0),
-                            cursor.getString(2),
-                            cursor.getDouble(3),
-                            cursor.getString(4)));
-                } while (cursor.moveToNext());
-            }
-        } finally {
-            cursor.close();
-        }
-
-        return list;
-    }
-
-    public List<WeightEntry> getAllWeights(String username) {
-        List<WeightEntry> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(
-                TABLE_WEIGHTS,
-                null,
-                COL_W_USERNAME + "=?",
-                new String[]{username},
-                null,
-                null,
-                COL_W_DATE + " DESC, " + COL_W_ID + " DESC"
-        );
-
-        try {
-            if (cursor.moveToFirst()) {
-                do {
-                    list.add(new WeightEntry(
-                            cursor.getLong(0),
-                            cursor.getString(2),
-                            cursor.getDouble(3),
-                            cursor.getString(4)));
-                } while (cursor.moveToNext());
-            }
-        } finally {
-            cursor.close();
-        }
-
-        return list;
     }
 }
