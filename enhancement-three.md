@@ -42,7 +42,7 @@ The index on the weights table was a smaller change, but it tied back to the dat
 
 ## Links
 
-* [Before Code](artifacts/enhancement-two/)
-* [Enhanced Code](artifacts/enhancement-three/)
+* [Before Code](https://github.com/billy-t-ng/snhu-cs499/tree/master)
+* [Enhanced Code](https://github.com/billy-t-ng/snhu-cs499/tree/enhancement-3-databases)
 * [Download Enhancement Three Narrative](narratives/enhancement-three-narrative.docx)
 
