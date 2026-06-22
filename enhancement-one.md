@@ -34,7 +34,7 @@ Overall, this enhancement reinforced the value of going back into existing code 
 
 ## Links
 
-* [Original Code](artifacts/original/)
-* [Enhanced Code](artifacts/enhancement-one/)
+* [Original Code](https://github.com/billy-t-ng/snhu-cs499/tree/master)
+* [Enhanced Code](https://github.com/billy-t-ng/snhu-cs499/tree/enhancement-1-software-design)
 * [Download Enhancement One Narrative](narratives/enhancement-one-narrative.docx)
 
