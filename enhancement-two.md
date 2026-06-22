@@ -34,7 +34,7 @@ The list view on the history screen came together more smoothly. The app loads t
 
 ## Links
 
-* [Before Code](artifacts/enhancement-one/)
-* [Enhanced Code](artifacts/enhancement-two/)
+* [Before Code](https://github.com/billy-t-ng/REPO-NAME/tree/master)
+* [Enhanced Code](https://github.com/billy-t-ng/snhu-cs499/tree/enhancement-2-algorithms-data-structures)
 * [Download Enhancement Two Narrative](narratives/enhancement-two-narrative.docx)
 
