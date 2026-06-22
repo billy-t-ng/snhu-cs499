@@ -1,11 +1,3 @@
----
-layout: single
-title: CS 499 ePortfolio
-permalink: /
----
-
-# CS 499 ePortfolio
-
 # CS 499 ePortfolio
 
 ## Professional Self-Assessment
