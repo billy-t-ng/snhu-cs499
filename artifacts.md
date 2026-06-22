@@ -8,7 +8,7 @@ This page contains links to the original and enhanced versions of my CS 499 caps
 
 | Artifact                                         | Code                                                                                               |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| Original Weight Tracking App                     | [View Code](https://github.com/billy-t-ng/REPO-NAME/tree/master)                                   |
+| Original Weight Tracking App                     | [View Code](https://github.com/billy-t-ng/snhu-cs499/tree/master)                                   |
 | Enhancement One: Software Design and Engineering | [View Code](https://github.com/billy-t-ng/snhu-cs499/tree/enhancement-1-software-design)           |
 | Enhancement Two: Algorithms and Data Structures  | [View Code](https://github.com/billy-t-ng/snhu-cs499/tree/enhancement-2-algorithms-data-structures) |
 | Enhancement Three: Databases                     | [View Code](https://github.com/billy-t-ng/snhu-cs499/tree/enhancement-3-databases)                  |
