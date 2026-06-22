@@ -1,8 +1,1 @@
-remote_theme: "mmistakes/minimal-mistakes@4.28.0"
-
-plugins:
-  - jekyll-include-cache
-
 minimal_mistakes_skin: "dark"
-
-markdown: kramdown
